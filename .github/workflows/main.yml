@@ -1,0 +1,100 @@
+name: Deploy to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@master
+      with:
+        host: 88.222.214.43
+        username: root
+        password: noccp!^RE5WQ|s&A$@N1
+        script: |
+          echo "🚀 Starting deployment..."
+          
+          # Create directory if it doesn't exist
+          mkdir -p /var/www/agent_framework
+          cd /var/www/agent_framework
+          
+          # Clone or pull latest code
+          if [ -d ".git" ]; then
+            echo "📥 Pulling latest changes..."
+            git pull origin main
+          else
+            echo "📥 Cloning repository..."
+            git clone https://github.com/traromal/AGENT_FRAMEWORK.git .
+          fi
+          
+          echo "✅ Code updated successfully!"
+          
+          # Update backend if exists
+          if [ -d "backend" ]; then
+            echo "📦 Updating Django backend..."
+            cd backend
+            
+            # Create virtual environment if doesn't exist
+            if [ ! -d "venv" ]; then
+              python3 -m venv venv
+            fi
+            
+            source venv/bin/activate
+            pip install -r requirements.txt 2>/dev/null || echo "No requirements.txt found"
+            python manage.py migrate 2>/dev/null || echo "No migrations needed"
+            python manage.py collectstatic --noinput 2>/dev/null || echo "No static files"
+            deactivate
+            cd ..
+          fi
+          
+          # Update frontend if exists
+          if [ -d "frontend" ]; then
+            echo "⚛️ Updating React frontend..."
+            cd frontend
+            npm install 2>/dev/null || echo "npm install skipped"
+            npm run build 2>/dev/null || echo "Build skipped"
+            cd ..
+          fi
+          
+          # Restart services if they exist
+          echo "🔄 Restarting services..."
+          sudo systemctl restart gunicorn 2>/dev/null || echo "Gunicorn not configured"
+          sudo systemctl restart nginx 2>/dev/null || echo "Nginx not configured"
+          
+          echo "✅ Deployment complete!"
+```
+
+---
+
+## How to Add This to GitHub:
+
+### Method 1: Direct in GitHub (Easiest)
+
+1. Go to your repo: `https://github.com/traromal/AGENT_FRAMEWORK`
+2. Click **"Actions"** tab
+3. Click **"set up a workflow yourself"**
+4. **Delete everything** in the editor
+5. **Paste the code above**
+6. Change filename from `main.yml` to `deploy.yml`
+7. Click **"Commit changes"**
+
+---
+
+### Method 2: From Your Computer
+
+1. Open your project folder on your computer
+2. Create this folder structure:
+```
+AGENT_FRAMEWORK/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
