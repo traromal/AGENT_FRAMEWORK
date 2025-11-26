@@ -34,30 +34,3 @@ jobs:
           fi
           
           echo "Code updated successfully!"
-          
-          if [ -d "backend" ]; then
-            echo "Updating Django backend..."
-            cd backend
-            if [ ! -d "venv" ]; then
-              python3 -m venv venv
-            fi
-            source venv/bin/activate
-            pip install -r requirements.txt || true
-            python manage.py migrate || true
-            python manage.py collectstatic --noinput || true
-            deactivate
-            cd ..
-          fi
-          
-          if [ -d "frontend" ]; then
-            echo "Updating React frontend..."
-            cd frontend
-            npm install || true
-            npm run build || true
-            cd ..
-          fi
-          
-          sudo systemctl restart gunicorn || true
-          sudo systemctl restart nginx || true
-          
-          echo "Deployment complete!"
